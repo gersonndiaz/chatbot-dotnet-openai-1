@@ -1,0 +1,74 @@
+# Ignore configuration files
+/Properties/launchSettings.json
+
+# .NET and Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+bin/
+Bin/
+obj/
+Obj/
+.vs/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+*.meta
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Node.js and Angular
+node_modules/
+dist/
+out-tsc/
+.angular
+.angular/cache
+.angular/cli
+coverage/
+.sourcemaps/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Compiled TypeScript
+*.js
+*.map
+
+# Backup files
+~$*
+*~
+
+# Azure specific
+csx/
+*.build.csdef
+ecf/
+rcf/
+ApplicationInsights.config
+
+# Miscellaneous
+*.cachefile
+
+# Local History for Visual Studio
+.localhistory/
+.codegpt
+
+appsettings.Development.json
