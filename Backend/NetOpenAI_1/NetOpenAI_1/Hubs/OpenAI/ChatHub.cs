@@ -38,8 +38,8 @@ namespace NetOpenAI_1.Hubs.OpenAI
             var requestBody = new
             {
                 model = modelName,
-                //stream = true,
-                stream = false,
+                stream = true,
+                stream_options = new { include_usage = true }, // 🔹 NUEVA OPCIÓN PARA INCLUIR TOKENS
                 messages = new[]
                 {
                     new { role = "system", content = "Eres un asistente útil." },
@@ -58,71 +58,52 @@ namespace NetOpenAI_1.Hubs.OpenAI
             }
 
             #region Stream
-            //using var stream = await response.Content.ReadAsStreamAsync();
-            //using var reader = new StreamReader(stream);
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
 
-            //while (!reader.EndOfStream)
-            //{
-            //    var line = await reader.ReadLineAsync();
-            //    if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:")) continue;
-
-            //    line = line.Replace("data:", "").Trim();
-            //    if (line == "[DONE]") break;
-
-            //    try
-            //    {
-            //        var json = JsonDocument.Parse(line);
-            //        var root = json.RootElement;
-
-            //        // 🔹 Capturar fragmentos de la respuesta en tiempo real
-            //        if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
-            //        {
-            //            var choice = choices[0];
-
-            //            if (choice.TryGetProperty("delta", out var delta) && delta.TryGetProperty("content", out var content))
-            //            {
-            //                string fragment = content.GetString();
-            //                if (!string.IsNullOrEmpty(fragment))
-            //                {
-            //                    completeResponse += fragment;
-            //                    await Clients.Caller.SendAsync("ReceiveMessage", fragment, mId);
-            //                }
-            //            }
-            //        }
-
-            //        // 🔹 Capturar tokens (esto normalmente solo aparece en la última respuesta del stream)
-            //        if (root.TryGetProperty("usage", out var usage))
-            //        {
-            //            promptTokens = usage.GetProperty("prompt_tokens").GetInt32();
-            //            completionTokens = usage.GetProperty("completion_tokens").GetInt32();
-            //            totalTokens = promptTokens + completionTokens;
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Console.WriteLine($"Error en el procesamiento de la respuesta: {ex.Message}");
-            //    }
-            //}
-            #endregion Stream
-
-            #region No Stream
-            var responseString = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
+            while (!reader.EndOfStream)
             {
-                throw new Exception($"Error en la API de OpenAI: {responseString}");
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:")) continue;
+
+                line = line.Replace("data:", "").Trim();
+                if (line == "[DONE]") break;
+
+                try
+                {
+                    var json = JsonDocument.Parse(line);
+                    var root = json.RootElement;
+
+                    // 🔹 Capturar fragmentos de la respuesta en tiempo real
+                    if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                    {
+                        var choice = choices[0];
+
+                        if (choice.TryGetProperty("delta", out var delta) && delta.TryGetProperty("content", out var content))
+                        {
+                            string fragment = content.GetString();
+                            if (!string.IsNullOrEmpty(fragment))
+                            {
+                                completeResponse += fragment;
+                                await Clients.Caller.SendAsync("ReceiveMessage", fragment, mId);
+                            }
+                        }
+                    }
+
+                    // 🔹 Capturar tokens (esto normalmente solo aparece en la última respuesta del stream)
+                    if (root.TryGetProperty("usage", out var usage))
+                    {
+                        promptTokens = usage.GetProperty("prompt_tokens").GetInt32();
+                        completionTokens = usage.GetProperty("completion_tokens").GetInt32();
+                        totalTokens = promptTokens + completionTokens;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error en el procesamiento de la respuesta: {ex.Message}");
+                }
             }
-
-            using var jsonDoc = JsonDocument.Parse(responseString);
-            var root = jsonDoc.RootElement;
-
-            completeResponse = root.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
-            promptTokens = root.GetProperty("usage").GetProperty("prompt_tokens").GetInt32();
-            completionTokens = root.GetProperty("usage").GetProperty("completion_tokens").GetInt32();
-            totalTokens = promptTokens + completionTokens;
-
-            await Clients.Caller.SendAsync("ReceiveMessage", completeResponse, mId);
-            #endregion No Stream
+            #endregion Stream
 
             // 🔹 Guardar la interacción en la base de datos con los tokens extraídos
             var interaccion = new Interaction
@@ -137,7 +118,6 @@ namespace NetOpenAI_1.Hubs.OpenAI
 
             Console.WriteLine($"Interacción: {interaccion.Request} -> {interaccion.Response}");
             Console.WriteLine($"Tokens: {interaccion.PromptTokens} + {interaccion.CompletionTokens} = {interaccion.TotalTokens}");
-            Console.WriteLine(responseString);
         }
     }
 }
