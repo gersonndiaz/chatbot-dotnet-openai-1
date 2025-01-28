@@ -16,7 +16,7 @@ export class ModelsAvailableComponent  implements OnInit {
   selectedModel: string = '';
 
   ngOnInit(): void {
-    this.httpClient.get('https://localhost:7163/api/ollama/models')
+    this.httpClient.get('https://localhost:7163/api/chat/models')
             .subscribe({
               next: (data: any) => 
               {
@@ -44,21 +44,8 @@ export class ModelsAvailableComponent  implements OnInit {
   }
 }
 
-export interface Details {
-  parent_model: string;
-  format: string;
-  family: string;
-  families: string[];
-  parameter_size: string;
-  quantization_level: string;
-}
-
 export interface Model {
   name: string;
-  modified_at: string;
-  size: number;
-  digest: string;
-  details: Details;
 }
 
 export interface Result {
