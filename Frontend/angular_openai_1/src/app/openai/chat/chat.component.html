@@ -1,1 +1,29 @@
-<p>chat works!</p>
+<div class="chat-content-area">
+    <div *ngFor="let message of messages">
+      <div *ngIf="message.type === 'user'" class="row user-chat-box">
+        <div class="chat-icon">
+          <img class="chatgpt-icon" src="assets/images/user-icon.png" />
+        </div>
+        <div class="chat-txt">{{ message.content }}</div>
+      </div>
+      <div *ngIf="message.type === 'gpt'" class="row gpt-chat-box">
+        <div class="chat-icon">
+          <img class="chatgpt-icon" src="assets/images/chatgpt-icon.png" />
+        </div>
+        <div class="chat-txt" [innerHTML]="convertMarkdownToHTML(message.content)"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="chat-input-area overflow-hidden">
+    <div class="row">
+      <div class="col-12 chat-inputs-area-inner">
+        <div class="row chat-inputs-container d-flex align-items-center">
+          <textarea class="form-control mb-1" placeholder="Send a message" [(ngModel)]="userMessage" [disabled]="isSending" name="messageToSend"></textarea>
+          <button class="col-1" (click)="sendMessage()" [disabled]="isSending">
+            <i class="fa fa-paper-plane" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

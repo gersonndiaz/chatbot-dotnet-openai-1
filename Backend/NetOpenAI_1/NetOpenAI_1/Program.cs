@@ -1,34 +1,45 @@
+using NetOpenAI_1.Hubs.OpenAI;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Carga el archivo base y el específico del entorno
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
 
 // Add services to the container.
 
-var app = builder.Build();
+builder.Services.AddControllers();
 
-// Configure the HTTP request pipeline.
-
-app.UseHttpsRedirection();
-
-var summaries = new[]
+builder.Services.AddSignalR(hubOptions =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    // 20 MB en bytes
+    hubOptions.MaximumReceiveMessageSize = 20 * 1024 * 1024;
 });
 
-app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+builder.Services.AddCors(options =>
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:4200", "http://localhost")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowCredentials();
+        });
+});
+
+builder.Services.AddHttpContextAccessor();
+
+var app = builder.Build();
+
+app.UseCors("AllowSpecificOrigin");
+
+app.UseRouting();
+
+app.MapControllers();
+
+app.MapHub<ChatHub>("/hubs/chat");
+
+app.Run();

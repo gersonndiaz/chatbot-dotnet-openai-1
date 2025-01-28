@@ -1,0 +1,10 @@
+<div *ngIf="jsonResult" class="row p-2">
+    <label for="gpt-model" class="form-label">Modelo</label>
+    <select [(ngModel)]="selectedModel" (change)="onSelectedModel($event)" name="gpt-model" id="gpt-model" class="form-select text-light gpt-model">
+        <!-- <option value="llama3.2">llama3.2</option>
+        <option value="gemma:2b">gemma:2b</option> -->
+        <option *ngFor="let model of jsonResult.result" [value]="model.name">
+            {{ model.name }}
+        </option>
+    </select>
+</div>
